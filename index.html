@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Grid</title>
+    <style>
+        .grid-wrapper {
+            display: flex;
+            justify-content: center;
+            gap: 300px;
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            grid-template-rows: repeat(7, 50px);
+            gap: 2px;
+            width: 100%;
+            max-width: 420px; /* Adjusted max-width for the larger grid */
+        }
+
+        .grid-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #ccc;
+            background-color: #f9f9f9;
+            color: #000;
+            cursor: pointer;
+            transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+            
+            width: 50px;  /* Adjust this value */
+            height: 50px; /* Adjust this value */
+        
+        }
+
+        .highlight {
+            background-color: #a0c4ff !important;
+        }
+
+        /* Fading effect for the second-to-last and last rows/columns */
+        .half-brightness {
+            background-color: rgba(249, 249, 249, 0.5); /* Same light gray, but with 50% opacity */
+            border-color: rgba(204, 204, 204, 0.5);     /* Original border color with 50% opacity */
+            color: rgba(0, 0, 0, 0.5);                  /* Black text with 50% opacity */
+        }
+
+        .quarter-brightness {
+            background-color: rgba(249, 249, 249, 0.25); /* Same light gray, but with 25% opacity */
+            border-color: rgba(204, 204, 204, 0.25);     /* Original border color with 25% opacity */
+            color: rgba(0, 0, 0, 0.15);                 /* Black text with 25% opacity */
+        }
+
+
+    </style>
+</head>
+<body>
+    <div class="grid-wrapper">
+        <!-- Left grid -->
+        <div class="grid-container" id="left-grid"></div>
+    
+        <!-- Right grid -->
+        <div class="grid-container" id="right-grid"></div>
+    </div>
+
+    <button id="populate-btn">Populate</button>
+    
+    <script>
+        function createGrid(containerId, rows, columns) {
+            const container = document.getElementById(containerId);
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < columns; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'grid-item';
+
+                    // Apply fading classes to second-to-last and last rows/columns
+                    if (col === columns - 2 || row === rows - 2) {
+                        cell.classList.add('half-brightness');
+                    }
+                    if (col === columns - 1 || row === rows - 1) {
+                        cell.classList.add('quarter-brightness');
+                    }
+
+                    cell.setAttribute('data-col', col);
+                    cell.textContent = `R${row + 1}C${col + 1}`;
+                    container.appendChild(cell);
+                }
+            }
+        }
+    
+        // Create grids for both left and right containers
+        createGrid('left-grid', 7, 12);
+        createGrid('right-grid', 7, 12);
+
+        let colX = null; // Variable to store the column index for the left grid
+        let colY = null; // Variable to store the column index for the right grid
+    
+        // Handling the left grid
+        const leftGrid = document.getElementById('left-grid');
+        leftGrid.addEventListener('click', (event) => {
+            if (event.target.classList.contains('grid-item')) {
+                const colIndex = parseInt(event.target.getAttribute('data-col'));
+                
+                // If the clicked column is the same as colX, clear all highlights on the left grid
+                if (colIndex === colX) {
+                    leftGrid.querySelectorAll('.grid-item').forEach(item => {
+                        item.classList.remove('highlight');
+                    });
+                    colX = null; // Reset colX
+                    console.log("Left Grid - Highlight cleared. colX reset.");
+                    return; // Exit the function
+                }
+    
+                // Store the selected column index in colX
+                colX = colIndex;
+                console.log("Left Grid - Selected Column Index (colX):", colX);
+    
+                // Remove highlight from all cells in the left grid
+                leftGrid.querySelectorAll('.grid-item').forEach(item => {
+                    item.classList.remove('highlight');
+                });
+    
+                // Highlight the clicked column and all columns to the right
+                for (let col = colIndex; col < 12; col++) {
+                    leftGrid.querySelectorAll(`.grid-item[data-col="${col}"]`).forEach(item => {
+                        item.classList.add('highlight');
+                    });
+                }
+            }
+        });
+    
+        // Handling the right grid
+        const rightGrid = document.getElementById('right-grid');
+        rightGrid.addEventListener('click', (event) => {
+            if (event.target.classList.contains('grid-item')) {
+                const colIndex = parseInt(event.target.getAttribute('data-col'));
+    
+                // If the clicked column is the same as colY, clear all highlights on the right grid
+                if (colIndex === colY) {
+                    rightGrid.querySelectorAll('.grid-item').forEach(item => {
+                        item.classList.remove('highlight');
+                    });
+                    colY = null; // Reset colY
+                    console.log("Right Grid - Highlight cleared. colY reset.");
+                    return; // Exit the function
+                }
+    
+                // Store the selected column index in colY
+                colY = colIndex;
+                console.log("Right Grid - Selected Column Index (colY):", colY);
+    
+                // Remove highlight from all cells in the right grid
+                rightGrid.querySelectorAll('.grid-item').forEach(item => {
+                    item.classList.remove('highlight');
+                });
+    
+                // Highlight only the clicked column
+                rightGrid.querySelectorAll(`.grid-item[data-col="${colIndex}"]`).forEach(item => {
+                    item.classList.add('highlight');
+                });
+            }
+        });
+
+        document.getElementById('populate-btn').addEventListener('click', async () => {
+            try {
+                const response = await fetch('http://127.0.0.1:5000/get-data');
+                const result = await response.json();
+                
+                const dataArray = result.data.rows;
+                const dataColumns = result.data.columns;
+                const metadataArray = result.metadata.rows;
+                const metadataColumns = result.metadata.columns;
+
+                console.log('Data from "data" table:', dataArray);
+                console.log('Metadata from "metadata" table:', metadataArray);
+
+                // Update the existing grids with headers and data
+                updateGridContent('left-grid', dataColumns, dataArray);
+                updateGridContent('right-grid', metadataColumns, metadataArray);
+
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        });
+
+        // Function to update grid content
+        function updateGridContent(containerId, columns, data) {
+            const container = document.getElementById(containerId);
+            const gridItems = container.querySelectorAll('.grid-item');
+
+            // Update header cells
+            columns.forEach((colName, colIndex) => {
+                const headerCell = gridItems[colIndex];
+                if (headerCell) {
+                    headerCell.textContent = colName;
+                }
+            });
+
+            // Update data cells
+            data.forEach((row, rowIndex) => {
+                row.forEach((value, colIndex) => {
+                    const cellIndex = (columns.length) + rowIndex * columns.length + colIndex;
+                    const cell = gridItems[cellIndex];
+                    if (cell) {
+                        cell.textContent = value;
+                    }
+                });
+            });
+        }
+
+    </script>
+</body>
+</html>
