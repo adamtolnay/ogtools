@@ -67,6 +67,8 @@
     </div>
 
     <button id="populate-btn">Populate</button>
+    <button id="predict-btn">Predict</button>
+    <div id="r2-result"></div>
     
     <script>
         function createGrid(containerId, rows, columns) {
@@ -75,6 +77,10 @@
                 for (let col = 0; col < columns; col++) {
                     const cell = document.createElement('div');
                     cell.className = 'grid-item';
+                    cell.setAttribute('data-col', col);
+                    cell.setAttribute('data-row', row);
+                    cell.textContent = `R${row + 1}C${col + 1}`;
+                    container.appendChild(cell);
 
                     // Apply fading classes to second-to-last and last rows/columns
                     if (col === columns - 2 || row === rows - 2) {
@@ -82,11 +88,7 @@
                     }
                     if (col === columns - 1 || row === rows - 1) {
                         cell.classList.add('quarter-brightness');
-                    }
-
-                    cell.setAttribute('data-col', col);
-                    cell.textContent = `R${row + 1}C${col + 1}`;
-                    container.appendChild(cell);
+                    } 
                 }
             }
         }
@@ -98,6 +100,24 @@
         let colX = null; // Variable to store the column index for the left grid
         let colY = null; // Variable to store the column index for the right grid
     
+        async function sendColumnsToServer(colX, colY) {
+            try {
+                const response = await fetch('http://127.0.0.1:5000/process-columns', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ colX, colY })
+                });
+                
+                const result = await response.json();
+                console.log('Server response:', result);
+            } catch (error) {
+                console.error('Error sending data to server:', error);
+            }
+        }
+
+
         // Handling the left grid
         const leftGrid = document.getElementById('left-grid');
         leftGrid.addEventListener('click', (event) => {
@@ -164,22 +184,45 @@
             }
         });
 
+
+        // Handle the predict button click
+        document.getElementById('predict-btn').addEventListener('click', async () => {
+            try {
+                // Send colX and colY to the server
+                const response = await fetch('http://127.0.0.1:5000/process-columns', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ colX, colY })
+                });
+
+                const result = await response.json();
+
+                // Display the R² score on the screen
+                document.getElementById('r2-result').innerText = `R² Score: ${result.r2}`;
+            } catch (error) {
+                console.error('Error running prediction:', error);
+                document.getElementById('r2-result').innerText = "Error running prediction.";
+            }
+        });
+
+
+
         document.getElementById('populate-btn').addEventListener('click', async () => {
             try {
                 const response = await fetch('http://127.0.0.1:5000/get-data');
                 const result = await response.json();
                 
-                const dataArray = result.data.rows;
-                const dataColumns = result.data.columns;
-                const metadataArray = result.metadata.rows;
-                const metadataColumns = result.metadata.columns;
+                const dataArray = result.data;
+                const metadataArray = result.metadata;
 
                 console.log('Data from "data" table:', dataArray);
                 console.log('Metadata from "metadata" table:', metadataArray);
 
                 // Update the existing grids with headers and data
-                updateGridContent('left-grid', dataColumns, dataArray);
-                updateGridContent('right-grid', metadataColumns, metadataArray);
+                updateGridContent('left-grid', dataArray);
+                updateGridContent('right-grid', metadataArray);
 
             } catch (error) {
                 console.error('Error fetching data:', error);
@@ -187,27 +230,22 @@
         });
 
         // Function to update grid content
-        function updateGridContent(containerId, columns, data) {
+        function updateGridContent(containerId, dataArray) {
             const container = document.getElementById(containerId);
             const gridItems = container.querySelectorAll('.grid-item');
 
-            // Update header cells
-            columns.forEach((colName, colIndex) => {
-                const headerCell = gridItems[colIndex];
-                if (headerCell) {
-                    headerCell.textContent = colName;
-                }
-            });
+            // Loop through each grid item
+            gridItems.forEach(cell => {
+                // Get the row and column of the current cell
+                const row = parseInt(cell.getAttribute('data-row'));
+                const col = parseInt(cell.getAttribute('data-col'));
 
-            // Update data cells
-            data.forEach((row, rowIndex) => {
-                row.forEach((value, colIndex) => {
-                    const cellIndex = (columns.length) + rowIndex * columns.length + colIndex;
-                    const cell = gridItems[cellIndex];
-                    if (cell) {
-                        cell.textContent = value;
-                    }
-                });
+                // Check if the cell position exists in the data array
+                if (row < dataArray.length && col < dataArray[row].length) {
+                    cell.textContent = dataArray[row][col]; // Set the value from the data array
+                } else {
+                    cell.textContent = ''; // Leave the cell blank if out of bounds
+                }
             });
         }
 
