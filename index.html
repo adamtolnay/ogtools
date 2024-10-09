@@ -1,254 +1,322 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Grid</title>
-    <style>
-        .grid-wrapper {
-            display: flex;
-            justify-content: center;
-            gap: 300px;
-            padding: 20px;
-            overflow-x: auto;
-        }
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Data Grid</title>
+        <style>
+            .grid-wrapper {
+                display: flex;
+                justify-content: center;
+                gap: 300px;
+                padding: 20px;
+                overflow-x: auto;
+            }
 
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(12, 1fr);
-            grid-template-rows: repeat(7, 50px);
-            gap: 2px;
-            width: 100%;
-            max-width: 420px; /* Adjusted max-width for the larger grid */
-        }
+            .grid-container {
+                display: grid;
+                grid-template-columns: repeat(12, 1fr);
+                grid-template-rows: repeat(7, 50px);
+                gap: 2px;
+                width: 100%;
+                max-width: 420px; /* Adjusted max-width for the larger grid */
+            }
 
-        .grid-item {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #ccc;
-            background-color: #f9f9f9;
-            color: #000;
-            cursor: pointer;
-            transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+            .grid-item {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 1px solid #ccc;
+                background-color: #f9f9f9;
+                color: #000;
+                cursor: pointer;
+                transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+                
+                width: 50px;  /* Adjust this value */
+                height: 50px; /* Adjust this value */
             
-            width: 50px;  /* Adjust this value */
-            height: 50px; /* Adjust this value */
+            }
+
+            .highlight {
+                background-color: #a0c4ff !important;
+            }
+
+            .buttons {
+                display: flex;
+                justify-content: center;
+                gap: 20px;
+                margin-top: 20px;
+            }
+
+            #r2-result {
+                display: flex;
+                justify-content: center;
+                gap: 20px;
+                margin-top: 20px;
+            }
+
+            /* Fading effect for the second-to-last and last rows/columns */
+            .half-brightness {
+                background-color: rgba(249, 249, 249, 0.5); /* Same light gray, but with 50% opacity */
+                border-color: rgba(204, 204, 204, 0.5);     /* Original border color with 50% opacity */
+                color: rgba(0, 0, 0, 0.5);                  /* Black text with 50% opacity */
+            }
+
+            .quarter-brightness {
+                background-color: rgba(249, 249, 249, 0.25); /* Same light gray, but with 25% opacity */
+                border-color: rgba(204, 204, 204, 0.25);     /* Original border color with 25% opacity */
+                color: rgba(0, 0, 0, 0.15);                 /* Black text with 25% opacity */
+            }
+
+            .code-box {
+                display: grid;
+                grid-template-columns: 1fr;
+                grid-template-rows: auto;
+                border: 4px solid black; /* Adjustable border thickness */
+                padding: 10px;
+                margin: 20px auto; /* Center the box horizontally */
+                width: 100%;
+                max-width: 1000px;
+                height: 600px; /* Adjustable height */
+                overflow-y: auto;
+                background-color: #f4f4f4;
+            }
+
+            .grid-title {
+                font-weight: bold;
+                text-align: center;
+                margin-bottom: 10px;
+            }
+
+            
+
+
+        </style>
+    </head>
+    <body>
+        <div class="grid-wrapper">
+            <div>
+                <div class="grid-title">X</div>
+                <div class="grid-container" id="left-grid"></div>
+            </div>
+            
+            <div>
+                <div class="grid-title">y</div>
+                <div class="grid-container" id="right-grid"></div>
+            </div>
+        </div>
+    
+        <div class="buttons">
+            <button id="populate-btn">Populate</button>
+            <button id="predict-btn">Predict</button>
+            <button id="code-btn">Code</button>
+        </div>
+        <div id="r2-result"></div>
+    
+        <div class="code-box" id="code-box">
+            <p>Code will be displayed here...</p>
+        </div>
         
-        }
+        <script>
+            function createGrid(containerId, rows, columns) {
+                const container = document.getElementById(containerId);
+                for (let row = 0; row < rows; row++) {
+                    for (let col = 0; col < columns; col++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'grid-item';
+                        cell.setAttribute('data-col', col);
+                        cell.setAttribute('data-row', row);
+                        cell.textContent = `R${row + 1}C${col + 1}`;
+                        container.appendChild(cell);
 
-        .highlight {
-            background-color: #a0c4ff !important;
-        }
-
-        /* Fading effect for the second-to-last and last rows/columns */
-        .half-brightness {
-            background-color: rgba(249, 249, 249, 0.5); /* Same light gray, but with 50% opacity */
-            border-color: rgba(204, 204, 204, 0.5);     /* Original border color with 50% opacity */
-            color: rgba(0, 0, 0, 0.5);                  /* Black text with 50% opacity */
-        }
-
-        .quarter-brightness {
-            background-color: rgba(249, 249, 249, 0.25); /* Same light gray, but with 25% opacity */
-            border-color: rgba(204, 204, 204, 0.25);     /* Original border color with 25% opacity */
-            color: rgba(0, 0, 0, 0.15);                 /* Black text with 25% opacity */
-        }
-
-
-    </style>
-</head>
-<body>
-    <div class="grid-wrapper">
-        <!-- Left grid -->
-        <div class="grid-container" id="left-grid"></div>
-    
-        <!-- Right grid -->
-        <div class="grid-container" id="right-grid"></div>
-    </div>
-
-    <button id="populate-btn">Populate</button>
-    <button id="predict-btn">Predict</button>
-    <div id="r2-result"></div>
-    
-    <script>
-        function createGrid(containerId, rows, columns) {
-            const container = document.getElementById(containerId);
-            for (let row = 0; row < rows; row++) {
-                for (let col = 0; col < columns; col++) {
-                    const cell = document.createElement('div');
-                    cell.className = 'grid-item';
-                    cell.setAttribute('data-col', col);
-                    cell.setAttribute('data-row', row);
-                    cell.textContent = `R${row + 1}C${col + 1}`;
-                    container.appendChild(cell);
-
-                    // Apply fading classes to second-to-last and last rows/columns
-                    if (col === columns - 2 || row === rows - 2) {
-                        cell.classList.add('half-brightness');
+                        // Apply fading classes to second-to-last and last rows/columns
+                        if (col === columns - 2 || row === rows - 2) {
+                            cell.classList.add('half-brightness');
+                        }
+                        if (col === columns - 1 || row === rows - 1) {
+                            cell.classList.add('quarter-brightness');
+                        } 
                     }
-                    if (col === columns - 1 || row === rows - 1) {
-                        cell.classList.add('quarter-brightness');
-                    } 
                 }
             }
-        }
-    
-        // Create grids for both left and right containers
-        createGrid('left-grid', 7, 12);
-        createGrid('right-grid', 7, 12);
+        
+            // Create grids for both left and right containers
+            createGrid('left-grid', 7, 12);
+            createGrid('right-grid', 7, 12);
 
-        let colX = null; // Variable to store the column index for the left grid
-        let colY = null; // Variable to store the column index for the right grid
-    
-        async function sendColumnsToServer(colX, colY) {
-            try {
-                const response = await fetch('http://127.0.0.1:5000/process-columns', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ colX, colY })
-                });
-                
-                const result = await response.json();
-                console.log('Server response:', result);
-            } catch (error) {
-                console.error('Error sending data to server:', error);
+            let rowX = null; // Variable to store the row index for the left grid
+            let colY = null; // Variable to store the column index for the right grid
+        
+            async function sendColumnsToServer(rowX, colY) {
+                try {
+                    const response = await fetch('http://127.0.0.1:5000/process-columns', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ rowX, colY })
+                    });
+                    
+                    const result = await response.json();
+                    console.log('Server response:', result);
+                } catch (error) {
+                    console.error('Error sending data to server:', error);
+                }
             }
-        }
 
 
-        // Handling the left grid
-        const leftGrid = document.getElementById('left-grid');
-        leftGrid.addEventListener('click', (event) => {
-            if (event.target.classList.contains('grid-item')) {
-                const colIndex = parseInt(event.target.getAttribute('data-col'));
-                
-                // If the clicked column is the same as colX, clear all highlights on the left grid
-                if (colIndex === colX) {
+            // Handling the left grid
+            const leftGrid = document.getElementById('left-grid');
+            leftGrid.addEventListener('click', (event) => {
+                if (event.target.classList.contains('grid-item')) {
+                    const rowIndex = parseInt(event.target.getAttribute('data-row'));
+                    
+                    // If the clicked column is the same as rowX, clear all highlights on the left grid
+                    if (rowIndex === rowX) {
+                        leftGrid.querySelectorAll('.grid-item').forEach(item => {
+                            item.classList.remove('highlight');
+                        });
+                        rowX = null; // Reset rowX
+                        console.log("Left Grid - Highlight cleared. rowX reset.");
+                        return; // Exit the function
+                    }
+        
+                    // Store the selected column index in rowX
+                    rowX = rowIndex;
+                    console.log("Left Grid - Selected Row Index (rowX):", rowX);
+        
+                    // Remove highlight from all cells in the left grid
                     leftGrid.querySelectorAll('.grid-item').forEach(item => {
                         item.classList.remove('highlight');
                     });
-                    colX = null; // Reset colX
-                    console.log("Left Grid - Highlight cleared. colX reset.");
-                    return; // Exit the function
+        
+                    // Highlight the clicked row and all rows below it
+                    for (let row = rowIndex; row < 7; row++) { // Assuming 7 rows in the grid
+                        leftGrid.querySelectorAll(`.grid-item[data-row="${row}"]`).forEach(item => {
+                            item.classList.add('highlight');
+                        });
+                    }
                 }
-    
-                // Store the selected column index in colX
-                colX = colIndex;
-                console.log("Left Grid - Selected Column Index (colX):", colX);
-    
-                // Remove highlight from all cells in the left grid
-                leftGrid.querySelectorAll('.grid-item').forEach(item => {
-                    item.classList.remove('highlight');
-                });
-    
-                // Highlight the clicked column and all columns to the right
-                for (let col = colIndex; col < 12; col++) {
-                    leftGrid.querySelectorAll(`.grid-item[data-col="${col}"]`).forEach(item => {
-                        item.classList.add('highlight');
-                    });
-                }
-            }
-        });
-    
-        // Handling the right grid
-        const rightGrid = document.getElementById('right-grid');
-        rightGrid.addEventListener('click', (event) => {
-            if (event.target.classList.contains('grid-item')) {
-                const colIndex = parseInt(event.target.getAttribute('data-col'));
-    
-                // If the clicked column is the same as colY, clear all highlights on the right grid
-                if (colIndex === colY) {
+            });
+        
+            // Handling the right grid
+            const rightGrid = document.getElementById('right-grid');
+            rightGrid.addEventListener('click', (event) => {
+                if (event.target.classList.contains('grid-item')) {
+                    const colIndex = parseInt(event.target.getAttribute('data-col'));
+        
+                    // If the clicked column is the same as colY, clear all highlights on the right grid
+                    if (colIndex === colY) {
+                        rightGrid.querySelectorAll('.grid-item').forEach(item => {
+                            item.classList.remove('highlight');
+                        });
+                        colY = null; // Reset colY
+                        console.log("Right Grid - Highlight cleared. colY reset.");
+                        return; // Exit the function
+                    }
+        
+                    // Store the selected column index in colY
+                    colY = colIndex;
+                    console.log("Right Grid - Selected Column Index (colY):", colY);
+        
+                    // Remove highlight from all cells in the right grid
                     rightGrid.querySelectorAll('.grid-item').forEach(item => {
                         item.classList.remove('highlight');
                     });
-                    colY = null; // Reset colY
-                    console.log("Right Grid - Highlight cleared. colY reset.");
-                    return; // Exit the function
-                }
-    
-                // Store the selected column index in colY
-                colY = colIndex;
-                console.log("Right Grid - Selected Column Index (colY):", colY);
-    
-                // Remove highlight from all cells in the right grid
-                rightGrid.querySelectorAll('.grid-item').forEach(item => {
-                    item.classList.remove('highlight');
-                });
-    
-                // Highlight only the clicked column
-                rightGrid.querySelectorAll(`.grid-item[data-col="${colIndex}"]`).forEach(item => {
-                    item.classList.add('highlight');
-                });
-            }
-        });
-
-
-        // Handle the predict button click
-        document.getElementById('predict-btn').addEventListener('click', async () => {
-            try {
-                // Send colX and colY to the server
-                const response = await fetch('http://127.0.0.1:5000/process-columns', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ colX, colY })
-                });
-
-                const result = await response.json();
-
-                // Display the R² score on the screen
-                document.getElementById('r2-result').innerText = `R² Score: ${result.r2}`;
-            } catch (error) {
-                console.error('Error running prediction:', error);
-                document.getElementById('r2-result').innerText = "Error running prediction.";
-            }
-        });
-
-
-
-        document.getElementById('populate-btn').addEventListener('click', async () => {
-            try {
-                const response = await fetch('http://127.0.0.1:5000/get-data');
-                const result = await response.json();
-                
-                const dataArray = result.data;
-                const metadataArray = result.metadata;
-
-                console.log('Data from "data" table:', dataArray);
-                console.log('Metadata from "metadata" table:', metadataArray);
-
-                // Update the existing grids with headers and data
-                updateGridContent('left-grid', dataArray);
-                updateGridContent('right-grid', metadataArray);
-
-            } catch (error) {
-                console.error('Error fetching data:', error);
-            }
-        });
-
-        // Function to update grid content
-        function updateGridContent(containerId, dataArray) {
-            const container = document.getElementById(containerId);
-            const gridItems = container.querySelectorAll('.grid-item');
-
-            // Loop through each grid item
-            gridItems.forEach(cell => {
-                // Get the row and column of the current cell
-                const row = parseInt(cell.getAttribute('data-row'));
-                const col = parseInt(cell.getAttribute('data-col'));
-
-                // Check if the cell position exists in the data array
-                if (row < dataArray.length && col < dataArray[row].length) {
-                    cell.textContent = dataArray[row][col]; // Set the value from the data array
-                } else {
-                    cell.textContent = ''; // Leave the cell blank if out of bounds
+        
+                    // Highlight only the clicked column
+                    rightGrid.querySelectorAll(`.grid-item[data-col="${colIndex}"]`).forEach(item => {
+                        item.classList.add('highlight');
+                    });
                 }
             });
-        }
 
-    </script>
-</body>
+
+            // Handle the predict button click
+            document.getElementById('predict-btn').addEventListener('click', async () => {
+                if (rowX === null || colY === null) {
+                    console.log("colX or colY not selected");
+                    return;
+                }
+                
+                try {
+                    // Send rowX and colY to the server
+                    const response = await fetch('http://127.0.0.1:5000/process-columns', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ rowX, colY })
+                    });
+
+                    const result = await response.json();
+
+                    // Display the R² score on the screen
+                    document.getElementById('r2-result').innerText = `R² Score: ${result.r2}`;
+                } catch (error) {
+                    console.error('Error running prediction:', error);
+                    document.getElementById('r2-result').innerText = "Error running prediction.";
+                }
+            });
+
+
+
+            document.getElementById('populate-btn').addEventListener('click', async () => {
+                try {
+                    const response = await fetch('http://127.0.0.1:5000/get-data');
+                    const result = await response.json();
+                    
+                    const dataArray = result.data;
+                    const metadataArray = result.metadata;
+
+                    console.log('Data from "data" table:', dataArray);
+                    console.log('Metadata from "metadata" table:', metadataArray);
+
+                    // Update the existing grids with headers and data
+                    updateGridContent('left-grid', dataArray);
+                    updateGridContent('right-grid', metadataArray);
+
+                } catch (error) {
+                    console.error('Error fetching data:', error);
+                }
+            });
+
+            // Function to update grid content
+            function updateGridContent(containerId, dataArray) {
+                const container = document.getElementById(containerId);
+                const gridItems = container.querySelectorAll('.grid-item');
+
+                // Loop through each grid item
+                gridItems.forEach(cell => {
+                    // Get the row and column of the current cell
+                    const row = parseInt(cell.getAttribute('data-row'));
+                    const col = parseInt(cell.getAttribute('data-col'));
+
+                    // Check if the cell position exists in the data array
+                    if (row < dataArray.length && col < dataArray[row].length) {
+                        cell.textContent = dataArray[row][col]; // Set the value from the data array
+                    } else {
+                        cell.textContent = ''; // Leave the cell blank if out of bounds
+                    }
+                });
+            }
+
+            function updateCodeBox(code) {
+                const codeBox = document.getElementById('code-box');
+                codeBox.innerText = code;
+            }
+
+            // Fetch the predict.py content and update the code box
+            document.getElementById('code-btn').addEventListener('click', async () => {
+                try {
+                    const response = await fetch('http://127.0.0.1:5000/get-code');
+                    const code = await response.text();
+                    updateCodeBox(code);
+                } catch (error) {
+                    console.error('Error fetching code:', error);
+                }
+            });
+
+        </script>
+    </body>
 </html>
